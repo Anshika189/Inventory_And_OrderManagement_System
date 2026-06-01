@@ -8,7 +8,7 @@ Pydantic-settings validates values at startup so misconfiguration fails fast.
 from functools import lru_cache
 from typing import List
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,31 +36,37 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
-    # CORS
+    # CORS — kept as a plain str so pydantic-settings doesn't try to
+    # JSON-parse the value before our validator runs. The list form
+    # is exposed via the `cors_origins_list` accessor.
     FRONTEND_URL: str = "http://localhost:5173"
-    BACKEND_CORS_ORIGINS: List[str] = Field(
-        default_factory=lambda: [
-            "http://localhost:5173",
-            "http://localhost:3000",
-        ]
-    )
+    BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8080"
 
     # Logging
     LOG_LEVEL: str = "INFO"
 
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def _split_cors(cls, v):
-        """Accept either a JSON list or a comma-separated string."""
+    @staticmethod
+    def _parse_cors(v) -> List[str]:
+        """Parse a comma-separated string, a JSON list, or an already-split list."""
+        if isinstance(v, list):
+            return [str(x).strip() for x in v if str(x).strip()]
         if isinstance(v, str):
             v = v.strip()
             if not v:
                 return []
             if v.startswith("["):
                 import json
-                return json.loads(v)
+                parsed = json.loads(v)
+                if not isinstance(parsed, list):
+                    raise ValueError("BACKEND_CORS_ORIGINS JSON must be a list")
+                return [str(x).strip() for x in parsed if str(x).strip()]
             return [item.strip() for item in v.split(",") if item.strip()]
-        return v
+        raise ValueError(f"Unsupported BACKEND_CORS_ORIGINS type: {type(v).__name__}")
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Public accessor — returns BACKEND_CORS_ORIGINS as a list."""
+        return self._parse_cors(self.BACKEND_CORS_ORIGINS)
 
 
 @lru_cache

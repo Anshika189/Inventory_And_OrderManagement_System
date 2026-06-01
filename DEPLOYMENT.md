@@ -75,7 +75,7 @@ Recommended stack:
 5. In the Render dashboard for the new service, set these env vars:
    - `DATABASE_URL` = your Neon connection string from Step 1
    - `FRONTEND_URL` = `https://<your-app>.vercel.app` (you'll fill this in after Step 3)
-   - `BACKEND_CORS_ORIGINS` = `'["https://<your-app>.vercel.app"]'`
+   - `BACKEND_CORS_ORIGINS` = `https://<your-app>.vercel.app` (plain URL, **no brackets**, **no quotes**)
 6. Click **Apply**. The backend will build (~2–3 min) and deploy.
 7. Copy the backend's public URL (e.g. `https://inventoryflow-backend.onrender.com`).
 
@@ -118,7 +118,7 @@ python scripts/seed.py
 
 Now that you have the real Vercel URL, update Render:
 - `FRONTEND_URL` = `https://<your-app>.vercel.app`
-- `BACKEND_CORS_ORIGINS` = `'["https://<your-app>.vercel.app"]'`
+- `BACKEND_CORS_ORIGINS` = `https://<your-app>.vercel.app` (plain URL, **no brackets**, **no quotes** — multiple URLs separated by commas)
 
 Render will redeploy automatically.
 

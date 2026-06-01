@@ -15,7 +15,9 @@
       "Bash(/opt/homebrew/bin/pip3 install *)",
       "Bash(python3 -c \"from app.main import app; print\\('OK, routes:', len\\(app.routes\\)\\)\")",
       "Bash(python3 -c ' *)",
-      "Bash(rtk curl *)"
+      "Bash(rtk curl *)",
+      "Bash(python3 -c \"from app.main import app; s = app.dependency_overrides if hasattr\\(app, 'dependency_overrides'\\) else None; from app.core.config import settings; print\\('cors:', settings.cors_origins_list\\); print\\('OK, routes:', len\\(app.routes\\)\\)\")",
+      "Bash(rtk git *)"
     ]
   }
 }
