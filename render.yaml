@@ -1,0 +1,41 @@
+# =============================================================================
+#  Render Blueprint — InventoryFlow Pro
+#
+#  One-click deploy. Connect this repo to Render and it'll create the
+#  services below. You'll be prompted to fill in DATABASE_URL (point it
+#  at your managed Postgres — Neon, Supabase, or Render's own Postgres).
+#
+#  After the backend deploys, copy its public URL (e.g.
+#  https://inventoryflow-backend.onrender.com) and:
+#    1) Paste it into BACKEND_URL below
+#    2) In the Vercel project, set VITE_API_URL to ${BACKEND_URL}/api
+# =============================================================================
+
+services:
+  # ---------- Backend API (FastAPI) ----------
+  - type: web
+    name: inventoryflow-backend
+    runtime: docker
+    rootDir: Backend
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Paste your managed Postgres connection string here.
+      # Examples:
+      #   Neon:    postgresql+psycopg2://USER:PASS@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+      #   Render:  postgresql+psycopg2://USER:PASS@HOST/dbname
+      #   Supabase:postgresql+psycopg2://postgres:PASS@db.xxx.supabase.co:5432/postgres
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false   # e.g. https://inventoryflow.vercel.app
+      - key: BACKEND_CORS_ORIGINS
+        sync: false   # e.g. '["https://inventoryflow.vercel.app"]'
+      - key: LOG_LEVEL
+        value: INFO

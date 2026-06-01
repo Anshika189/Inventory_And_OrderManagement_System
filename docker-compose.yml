@@ -1,0 +1,112 @@
+name: inventoryflow
+
+# =============================================================================
+#  InventoryFlow Pro — unified docker-compose
+#
+#  TWO MODES (decided automatically by the DATABASE_URL env var):
+#
+#  1) LOCAL / SELF-CONTAINED  — the default `docker compose up`
+#     - Brings up postgres + backend + frontend
+#     - DATABASE_URL points at the bundled postgres service
+#     - Users can change POSTGRES_USER / PASSWORD / DB in .env if they want
+#     - Data persists in the `postgres_data` named volume
+#
+#  2) PRODUCTION-LIKE  — set DATABASE_URL in your environment first
+#     - The backend uses YOUR DATABASE_URL (e.g. Neon, Supabase, Render DB)
+#     - The bundled postgres service is still defined but unused
+#     - Run only the backend:  docker compose up -d backend
+#     - Or skip postgres:      docker compose --profile external up -d
+#
+#  This means: a fresh user clones, runs `docker compose up`, gets a
+#  working app. The maintainer deploys to Render/Railway + Vercel + Neon
+#  using the SAME code, with DATABASE_URL injected from the deploy env.
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: inventoryflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-inventoryflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-inventoryflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - inventoryflow-net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: inventoryflow-backend
+    restart: unless-stopped
+    # DATABASE_URL precedence:
+    #   1) external env var (set by deploy platform OR your shell)
+    #   2) auto-built from POSTGRES_* if DATABASE_URL is unset → uses local postgres service
+    environment:
+      APP_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-inventoryflow}}
+      SECRET_KEY: ${SECRET_KEY:-change-me-please-use-a-long-random-string}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - inventoryflow-net
+
+  frontend:
+    build:
+      context: ./Frontend/vite-project
+      dockerfile: Dockerfile
+      # Use a relative path so the nginx reverse-proxy in this same
+      # container forwards /api/* to the backend (no CORS issues).
+      # For Vercel-style deploys, set VITE_API_URL to the absolute URL
+      # of the deployed backend in the Vercel project settings.
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: inventoryflow-frontend
+    restart: unless-stopped
+    environment:
+      API_PROXY_PASS: ${API_PROXY_PASS:-http://backend:8000/api}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - inventoryflow-net
+
+volumes:
+  postgres_data:
+    name: inventoryflow_postgres_data
+
+networks:
+  inventoryflow-net:
+    name: inventoryflow_net
+    driver: bridge

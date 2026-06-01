@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls *)",
+      "Bash(rtk find *)",
+      "Bash(rtk read *)",
+      "Bash(python3 -c 'import ast, os; errors = []; *)",
+      "Bash(rtk docker *)",
+      "Bash(npm install *)",
+      "Bash(rtk npm *)",
+      "Bash(rtk grep *)",
+      "Bash(docker compose *)",
+      "Bash(python3 -c \"from app.main import app; print\\('OK', len\\(app.routes\\)\\)\")",
+      "Bash(rtk pip *)",
+      "Bash(/opt/homebrew/bin/pip3 install *)",
+      "Bash(python3 -c \"from app.main import app; print\\('OK, routes:', len\\(app.routes\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(rtk curl *)"
+    ]
+  }
+}

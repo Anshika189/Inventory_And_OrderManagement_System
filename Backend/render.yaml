@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: inventoryflow-backend
+    runtime: python
+    plan: starter
+    rootDir: Backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "sh -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers'"
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://inventoryflow.example.com
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://inventoryflow.example.com"]'
+      - key: LOG_LEVEL
+        value: INFO

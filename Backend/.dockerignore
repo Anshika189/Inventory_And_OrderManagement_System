@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Local config
+.env
+.env.local
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Docs / readme duplicates (kept at repo root)
+README.md
